@@ -104,6 +104,12 @@ func Login(c *fiber.Ctx) error {
 func User(c *fiber.Ctx) error {
 	id, _ := middlewares.GetUserId(c)
 
+	if id == 0 {
+		c.Status(fiber.StatusUnauthorized)
+		return c.JSON(fiber.Map{
+			"message": "unauthorized",
+		})
+	}
 	var user models.User
 
 	database.DB.Where("id = ?", id).First(&user)

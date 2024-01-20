@@ -33,7 +33,6 @@ func Setup(app *fiber.App) {
 	ambassador := api.Group("ambassador")
 	ambassador.Post("register", controllers.Register)
 	ambassador.Post("login", controllers.Login)
-	admin.Get("user", controllers.User)
 
 
 
