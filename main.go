@@ -3,7 +3,6 @@ package main
 import (
 	"ambassador/src/database"
 	"ambassador/src/routes"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
@@ -11,6 +10,7 @@ import (
 func main() {
 	database.Connect()
 	database.AutoMigrate()
+	database.SetupRedis()
 
 	app := fiber.New()
 
