@@ -3,8 +3,13 @@ package controllers
 import (
 	"ambassador/src/database"
 	"ambassador/src/models"
-	"github.com/gofiber/fiber/v2"
+	"context"
+	"encoding/json"
+	"fmt"
 	"strconv"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func Products(c *fiber.Ctx) error {
@@ -62,4 +67,32 @@ func DeleteProduct(c *fiber.Ctx) error {
 	database.DB.Delete(&product)
 
 	return nil
+}
+
+func ProductsFrontend(c *fiber.Ctx) error {
+	var products []models.Product
+	var ctx = context.Background()
+	result, err := database.Cache.Get(ctx, "Products_Frontend").Result()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		database.DB.Find(&products)
+
+		bytes, _ := json.Marshal(products)
+
+		if err != nil {
+			panic(err)
+		}
+
+		if errKey := database.Cache.Set(ctx, "Products_Frontend", bytes, 30*time.Minute).Err(); errKey != nil {
+			panic(errKey)
+		}
+	} else {
+		err := json.Unmarshal([]byte(result), &products)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return c.JSON(products)
 }

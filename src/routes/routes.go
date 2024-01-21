@@ -3,6 +3,7 @@ package routes
 import (
 	"ambassador/src/controllers"
 	"ambassador/src/middlewares"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -33,7 +34,7 @@ func Setup(app *fiber.App) {
 	ambassador := api.Group("ambassador")
 	ambassador.Post("register", controllers.Register)
 	ambassador.Post("login", controllers.Login)
-
+	ambassador.Get("products/frontend", controllers.ProductsFrontend)
 
 
 	ambassadorAuthenticated := ambassador.Use(middlewares.IsAuthenticated)
