@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -29,6 +30,8 @@ func CreateProducts(c *fiber.Ctx) error {
 	}
 
 	database.DB.Create(&product)
+
+	go database.ClearCache("Products_Frontend","Products_Backend")
 
 	return c.JSON(product)
 }
@@ -56,15 +59,9 @@ func UpdateProduct(c *fiber.Ctx) error {
 
 	database.DB.Model(&product).Updates(&product)
 
-	go deleteCache("Products_Frontend, Products_Backend")
+	go database.ClearCache("Products_Frontend","Products_Backend")
 
 	return c.JSON(product)
-}
-
-func deleteCache(key string){
-	time.Sleep(5* time.Second)
-	database.Cache.Del(context.Background(), key)
-
 }
 
 func DeleteProduct(c *fiber.Ctx) error {
@@ -74,6 +71,8 @@ func DeleteProduct(c *fiber.Ctx) error {
 	product.Id = uint(id)
 
 	database.DB.Delete(&product)
+	
+	go database.ClearCache("Products_Frontend","Products_Backend")
 
 	return nil
 }
