@@ -6,7 +6,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -78,7 +80,7 @@ func ProductsFrontend(c *fiber.Ctx) error {
 		fmt.Println(err.Error())
 		database.DB.Find(&products)
 
-		bytes, _ := json.Marshal(products)
+		bytes, err := json.Marshal(products)
 
 		if err != nil {
 			panic(err)
@@ -95,4 +97,55 @@ func ProductsFrontend(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(products)
+}
+
+func ProductsBackend(c *fiber.Ctx) error {
+	var products []models.Product
+	var ctx = context.Background()
+
+	result, err := database.Cache.Get(ctx, "Product_Backend").Result()
+
+	if err != nil {
+		fmt.Println(err.Error())
+		database.DB.Find(&products)
+
+		bytes, err := json.Marshal(products)
+
+		if err != nil {
+			panic(err)
+		}
+
+		database.Cache.Set(ctx, "Products_Backend", bytes, 30*time.Minute)
+	} else {
+		json.Unmarshal([]byte(result), &products)
+
+	}
+
+	var searchedProducts []models.Product
+
+	if s := c.Query("s"); s != "" {
+
+		lower := strings.ToLower(s)
+		for _, product := range products {
+			if (strings.Contains(strings.ToLower(product.Title), lower)) || (strings.Contains(strings.ToLower(product.Description), lower)) {
+				searchedProducts = append(searchedProducts, product)
+			}
+		}
+	} else {
+		searchedProducts = products
+	}
+
+	if sortParam := c.Query("sort"); sortParam != "" {
+		sortLower := strings.ToLower(sortParam)
+		if sortLower == "asc" {
+			sort.Slice(searchedProducts, func(i, j int) bool {
+				return searchedProducts[i].Price < searchedProducts[j].Price
+			})
+		} else if sortLower == "desc" {
+			sort.Slice(searchedProducts, func(i, j int) bool {
+				return searchedProducts[i].Price > searchedProducts[j].Price
+			})
+		}
+	}
+	return c.JSON(searchedProducts)
 }
